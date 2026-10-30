@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Worry Sorter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1f2d2a; --dim: #53655f; --green: #86BC25; --green-d: #5a7f14; --neon: #86EB22; --teal: #2F8F83; --sky: #4A8FC4;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body { margin: 0; min-height: 100%; color: var(--ink); background: #E3F2EE; font-family: 'Open Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  .bg { position: fixed; inset: 0; z-index: 0; background: linear-gradient(180deg, #D9EEE9 0%, #EEF7F4 55%, #F8FBFA 100%); }
+  .bg::after { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(47,143,131,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(47,143,131,.06) 1px, transparent 1px); background-size: 38px 38px; }
+  main { position: relative; z-index: 1; min-height: 100vh; box-sizing: border-box; padding: 64px 14px calc(env(safe-area-inset-bottom, 0px) + 28px); display: flex; flex-direction: column; align-items: center; }
+  .mark { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 16px); left: 14px; display: flex; align-items: center; gap: 9px; padding: 7px 14px 7px 12px; border-radius: 999px; background: rgba(255,255,255,.9); font-size: .85rem; color: var(--dim); }
+  .mark i { width: 10px; height: 10px; border-radius: 50%; background: var(--green); }
+  .wrap { width: min(560px, 100%); text-align: center; }
+  h1 { margin: 0; font-weight: 800; letter-spacing: -.02em; line-height: 1; font-size: clamp(2.3rem, 9vw, 3.2rem); } h1 span { color: var(--teal); }
+  h2 { margin: 0; font-weight: 800; font-size: 1.7rem; line-height: 1.1; letter-spacing: -.01em; }
+  .sub { margin: 12px auto 0; max-width: 44ch; color: var(--dim); font-size: 1rem; line-height: 1.5; }
+  .fine { margin: 14px 0 0; font-size: .82rem; color: var(--dim); }
+  button { font: inherit; cursor: pointer; }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  .btn { color: #11150a; background: var(--green); border: 0; border-radius: 999px; padding: 14px 28px; min-height: 52px; font-size: 1.02rem; font-weight: 700; box-shadow: 0 8px 18px rgba(90,127,20,.25); transition: transform .15s, background .2s, opacity .2s; }
+  .btn:hover:not(:disabled) { background: var(--neon); transform: translateY(-1px); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+  .btn.ghost { background: rgba(255,255,255,.9); color: var(--ink); border: 1px solid rgba(31,45,42,.25); box-shadow: none; font-weight: 600; }
+  .btn.small { padding: 10px 18px; min-height: 44px; font-size: .95rem; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 18px; }
+
+  .status { display: flex; justify-content: space-between; margin: 18px 4px 8px; font-size: .92rem; font-weight: 700; } .status span:last-child { color: var(--teal); font-weight: 600; }
+  .pile { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; min-height: 64px; padding: 14px 10px; border-radius: 20px; background: rgba(255,255,255,.7); border: 2px dashed rgba(31,45,42,.2); }
+  .pile:empty::before { content: "All sorted. Nice."; color: var(--dim); align-self: center; font-weight: 600; }
+
+  .note { --r: 0deg; position: relative; text-align: left; border: 0; color: var(--ink); font: inherit; font-size: .88rem; font-weight: 600; line-height: 1.25; padding: 10px 12px; border-radius: 4px 4px 14px 4px; box-shadow: 0 3px 8px rgba(31,45,42,.2); transform: rotate(var(--r)); touch-action: none; user-select: none; -webkit-user-select: none; max-width: 100%; transition: box-shadow .15s, transform .15s; }
+  .note:hover { transform: rotate(var(--r)) translateY(-2px); box-shadow: 0 8px 16px rgba(31,45,42,.25); }
+  .note.c0 { background: #FFF1A8; } .note.c1 { background: #FFD3DE; } .note.c2 { background: #CDE7FF; } .note.c3 { background: #D8F2C5; } .note.c4 { background: #FFDDBA; }
+  .note.sel { outline: 3px solid var(--ink); outline-offset: 2px; transform: rotate(0) scale(1.05); }
+  .note.lifted { opacity: .3; }
+  .ghost-note { position: fixed; z-index: 50; pointer-events: none; box-shadow: 0 14px 30px rgba(31,45,42,.35); transform: rotate(3deg) scale(1.06); }
+
+  .zones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .zone { min-height: 210px; border-radius: 22px; padding: 12px 10px 10px; text-align: left; display: flex; flex-direction: column; gap: 8px; transition: background .2s, box-shadow .2s, transform .15s; }
+  .zone.do { background: rgba(134,188,37,.16); border: 2.5px dashed #5a7f14; } .zone.out { background: rgba(74,143,196,.14); border: 2.5px dashed #3d78a8; }
+  .zone.over { box-shadow: 0 0 0 4px rgba(31,45,42,.25); transform: scale(1.015); }
+  .zh { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: .92rem; line-height: 1.15; } .zh svg { flex: none; width: 34px; height: 34px; }
+  .slot { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .slot .note { font-size: .8rem; padding: 8px 10px; }
+  .place { align-self: stretch; margin-top: auto; padding: 9px 10px; min-height: 40px; border-radius: 12px; border: 1.5px solid rgba(31,45,42,.3); background: rgba(255,255,255,.85); color: var(--ink); font-weight: 700; font-size: .85rem; opacity: .55; }
+  .place:not(:disabled) { opacity: 1; border-color: var(--ink); } .place:disabled { cursor: default; }
+  .add { display: flex; gap: 8px; margin: 14px 0 0; }
+  .add input { flex: 1; min-width: 0; padding: 12px 14px; font: inherit; font-size: .95rem; border-radius: 14px; border: 1px solid rgba(31,45,42,.25); background: #fff; color: var(--ink); }
+
+  /* result */
+  .card { background: #fff; border-radius: 26px; padding: 24px 20px 22px; text-align: left; box-shadow: 0 16px 44px rgba(31,45,42,.16); animation: rise .5s ease both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  .tag { font-size: .76rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--teal); }
+  .nums { display: flex; gap: 10px; margin: 14px 0 6px; } .nums div { flex: 1; border-radius: 16px; padding: 12px 8px; text-align: center; } .nums .a { background: #EEF6DD; } .nums .b { background: #E3EEF8; } .nums b { display: block; font-size: 1.8rem; font-weight: 800; } .nums span { font-size: .8rem; color: var(--dim); }
+  .msg { margin: 8px 0 0; color: var(--dim); line-height: 1.5; }
+  .sec { margin-top: 18px; } .sec .tag { margin-bottom: 8px; }
+  .item { margin-bottom: 10px; padding: 11px 14px; border-radius: 14px; font-size: .94rem; line-height: 1.4; } .item.a { background: #F1F7E4; border-left: 4px solid var(--green); } .item.b { background: #EAF2F9; border-left: 4px solid var(--sky); }
+  .item b { display: block; margin-bottom: 2px; } .item span { color: var(--dim); }
+  .why { margin-top: 16px; font-size: .88rem; color: var(--dim); line-height: 1.5; }
+  .balloon { position: fixed; bottom: -90px; width: 46px; height: 58px; border-radius: 50% 50% 48% 48%; z-index: 40; pointer-events: none; animation: rise2 3.6s ease-in forwards; }
+  .balloon::after { content: ""; position: absolute; left: 50%; top: 100%; width: 2px; height: 34px; background: rgba(31,45,42,.35); }
+  @keyframes rise2 { from { transform: translateY(0) translateX(0); opacity: 1; } to { transform: translateY(-115vh) translateX(26px); opacity: 0; } }
+  [hidden] { display: none !important; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  @media (max-width: 380px) { .zone { padding: 10px 8px; } .zh { font-size: .84rem; } }
+  @media (prefers-reduced-motion: reduce) { .note, .zone, .card, .balloon { animation: none !important; transition: none; } }
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true"></div>
+<main>
+  <div class="mark"><i></i><span>Day 5</span></div>
+
+  <section class="wrap" id="sort">
+    <h1>Worry <span>Sorter</span></h1>
+    <p class="sub">Some worries are yours to fix. Some aren't yours at all. Drag each note to the box where it belongs, or tap a note and then a box.</p>
+    <div class="status"><span id="left">8 to sort</span><span id="hint">No right or wrong answers</span></div>
+    <div class="pile" id="pile" aria-label="Worries still to sort"></div>
+    <div class="add"><input id="own" type="text" maxlength="60" autocomplete="off" placeholder="Add one of your own (optional)" aria-label="Add one of your own worries"><button class="btn ghost small" id="addBtn" type="button">Add</button></div>
+
+    <div class="zones">
+      <div class="zone do" id="zDo" data-zone="do">
+        <div class="zh"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="24" r="12" fill="#86BC25"/><path d="M20 12v-6" stroke="#5a7f14" stroke-width="3" stroke-linecap="round"/><ellipse cx="14" cy="6" rx="6" ry="3" fill="#5a7f14"/><ellipse cx="26" cy="5" rx="6" ry="3" fill="#86BC25"/><path d="M14 22q2-3 4 0M22 22q2-3 4 0" stroke="#1E2230" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M17 28q3 3 6 0" stroke="#1E2230" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg><b>I can do something about it</b></div>
+        <div class="slot" id="slotDo"></div>
+        <button class="place" data-zone="do" type="button" disabled>Place here</button>
+      </div>
+      <div class="zone out" id="zOut" data-zone="out">
+        <div class="zh"><svg viewBox="0 0 40 40" aria-hidden="true"><g fill="#8FA0BA"><circle cx="12" cy="24" r="8"/><circle cx="21" cy="18" r="10"/><circle cx="30" cy="24" r="8"/><rect x="12" y="22" width="18" height="10" rx="5"/></g><path d="M16 24q2-3 4 0M23 24q2-3 4 0" stroke="#1E2230" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M19 29q3 2 6 0" stroke="#1E2230" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg><b>Out of my hands</b></div>
+        <div class="slot" id="slotOut"></div>
+        <button class="place" data-zone="out" type="button" disabled>Place here</button>
+      </div>
+    </div>
+    <div class="row"><button class="btn" id="see" type="button" disabled>See my sorted worries</button><button class="btn ghost" id="shuffle" type="button">New set</button></div>
+    <p class="fine">No sign-in. Nothing saved, and nothing you type leaves this page.</p>
+    <div class="sr" id="live" aria-live="polite"></div>
+  </section>
+
+  <section class="wrap" id="res" hidden aria-live="polite">
+    <div class="card">
+      <div class="tag">Your sort</div>
+      <h2 id="headline"></h2>
+      <div class="nums"><div class="a"><b id="nDo">0</b><span>in your hands</span></div><div class="b"><b id="nOut">0</b><span>out of your hands</span></div></div>
+      <p class="msg" id="msg"></p>
+      <div class="sec" id="secDo"><div class="tag">Yours to move: one small step each</div><div id="listDo"></div></div>
+      <div class="sec" id="secOut"><div class="tag">Not yours to carry: let these float</div><div id="listOut"></div></div>
+      <p class="why"><b>What's it for?</b> Worries feel heavier when they're all in one pile. Sorting them shows what you can actually move, and what you can put down.</p>
+    </div>
+    <div class="row"><button class="btn" id="again" type="button">Sort again</button><button class="btn ghost" id="copy" type="button">Copy my list</button><button class="btn ghost" id="back" type="button">Back to my notes</button></div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+  // k = the subject (a set never has two worries on the same subject), t = the worry,
+  // s = a tiny step if you CAN act on it, l = a kind line if you can't
+  const PRE = [
+    { k: 'deploy', t: 'The deployment going wrong', s: 'Do one last check of the rollback plan, then stop checking.', l: "Once it's shipped, it's shipped. You prepared, and that was your part." },
+    { k: 'deploy', t: 'A bug found after release', s: "Log it, fix the next small piece first, and tell the team what's coming.", l: "It's found now, which beats found later. Fixing it is the job, not blaming yourself." },
+    { k: 'deploy', t: 'The production alert at night', s: 'Check the on-call plan, know who to call, then trust it.', l: "You can't watch a screen all night. The plan and the people are there for this." },
+    { k: 'manager', t: 'What my manager thinks of me', s: 'Ask for 5 minutes of feedback this week.', l: "You can't read minds. You can show your work, and you already do." },
+    { k: 'manager', t: 'Whether my appraisal will go well', s: 'Write down your three best wins this cycle and share them early.', l: "The final rating isn't yours to decide. Your record and your story are." },
+    { k: 'manager', t: "A feedback email I'm dreading", s: 'Read it once, note one thing you can use, and reply tomorrow.', l: "Feedback is about the work, not your worth. It can wait an hour." },
+    { k: 'deadline', t: 'A deadline on Friday', s: 'Split it into three chunks and book the first one today.', l: 'If the date is fixed, work the plan. Staring at the date will not move it.' },
+    { k: 'deadline', t: "A deadline I can't move", s: 'List what is truly needed by the date and park the rest.', l: "The date is fixed. Your effort, and your honesty about trade-offs, are not." },
+    { k: 'deadline', t: 'Too much to finish before leave', s: 'Hand over two things and write a short note for the rest.', l: 'Not everything has to be finished. Some things can wait until you are back.' },
+    { k: 'inbox', t: "An email I haven't replied to", s: "Send one line: 'Got it, I'll reply by tomorrow.'", l: 'It can wait. Pick a time and let it sit until then.' },
+    { k: 'inbox', t: 'Unread messages', s: 'Pick a 15-minute window and clear only the urgent ones.', l: "They're not all urgent, and they will still be there." },
+    { k: 'inbox', t: 'An email I sent and now regret', s: 'Send a short, calm follow-up if it needs one. Then stop replaying it.', l: "It's sent. Most people have moved on already, and so can you." },
+    { k: 'meeting', t: 'What someone said in a meeting', s: "Ask them directly: 'What did you mean by that?'", l: "You can't rewind it. Most people forget their own comments by lunch." },
+    { k: 'meeting', t: 'Speaking up in the next meeting', s: 'Write the one sentence you want to say, and say it early.', l: "You can't control how it lands. You can say it kindly and clearly." },
+    { k: 'meeting', t: "Being asked something I can't answer", s: "Keep a line ready: 'Let me check and get back to you today.'", l: 'Not knowing everything is normal. Nobody expects it.' },
+    { k: 'performance', t: "Whether I'm doing enough", s: 'Write down three things you did this week. Evidence beats worry.', l: 'Nobody can measure that perfectly. Your effort is what counts.' },
+    { k: 'performance', t: 'Comparing myself with colleagues', s: 'Note one thing you learned this month, just for you.', l: 'You only see their highlights. Your pace is yours.' },
+    { k: 'performance', t: 'Not knowing enough about a tool', s: 'Block 30 minutes this week to try it, and ask one person one question.', l: 'Nobody knows everything on day one. Learning is part of the work.' },
+    { k: 'tech', t: 'A slow laptop', s: 'Close what you are not using, restart tonight, and raise a ticket if it continues.', l: "It's slow right now. Staring at it will not speed it up." },
+    { k: 'tech', t: 'VPN dropping in the middle of a call', s: "Keep a hotspot ready and a one-line 'I'll rejoin in a minute' message.", l: "The network isn't yours to fix. A calm 'back in a minute' is all you need." },
+    { k: 'tech', t: 'Losing my work in a crash', s: 'Turn on autosave and save a copy before you switch tasks.', l: "A crash isn't a mistake of yours. Set up the backup once and let it go." },
+    { k: 'uncertain', t: "A project I'm not sure about", s: "Write the one question you'd ask if you weren't nervous, and ask it.", l: "Not every decision is yours. Do your part well, and let the rest go." },
+    { k: 'uncertain', t: 'A reorg or a team change', s: 'Ask your lead one clear question about what it means for you.', l: "Decisions above you aren't yours to make. How you respond is." },
+    { k: 'uncertain', t: "Not knowing what's next in my role", s: 'Book 15 minutes with a mentor to talk about what growth could look like.', l: 'Nobody has the full map. Next steps often show up one at a time.' },
+    { k: 'mistake', t: 'A small mistake I made', s: 'Fix it or flag it today. Then move on.', l: "It's done. What matters is what you do next." },
+    { k: 'mistake', t: 'A typo I sent to a client', s: 'Send a short correction only if it changes the meaning.', l: 'A typo is not a verdict on you. People rarely remember them.' },
+    { k: 'commute', t: 'Traffic on the way home', s: 'Leave 15 minutes earlier or later than usual.', l: 'The road is not yours to fix. Put on something you love.' },
+    { k: 'commute', t: 'Missing the last bus or train', s: 'Check the timetable now and set a leave-by reminder.', l: "You can't control the schedule. You can plan a backup ride." },
+    { k: 'commute', t: 'A long commute tomorrow', s: 'Pack what you need tonight and queue a podcast or playlist.', l: "The distance won't change. How you spend it can." },
+    { k: 'weather', t: 'The weather this weekend', s: 'Plan one indoor backup so rain cannot ruin it.', l: 'Nobody controls the sky. Not even us, and we made a forecast.' },
+    { k: 'weather', t: 'Rain on my way to work', s: 'Keep an umbrella or a light jacket in your bag.', l: "The rain will do what it does. You can't dry the sky." },
+    { k: 'mood', t: "Someone else's bad mood", s: 'Check in kindly if you want to. That is all you can do.', l: 'You can care about someone without carrying their mood.' },
+    { k: 'mood', t: 'A friend who seems upset', s: "Send a simple 'Thinking of you, want to talk?'", l: "You can't fix their feelings. Being there is already a lot." },
+    { k: 'mood', t: 'A disagreement with someone', s: 'Pick a calm moment to say the one thing you need, not everything.', l: "You can't control how they respond. You can speak kindly and clearly." },
+    { k: 'future', t: 'What happens next year', s: 'Pick one skill or person to invest in this month.', l: 'Nobody knows. Plan lightly and live today.' },
+    { k: 'future', t: 'Where my career is headed', s: "Write one thing you'd like more of next year and one small step toward it.", l: 'Nobody can see that far. Direction matters more than certainty.' },
+    { k: 'future', t: "Whether I'm making the right choice", s: 'Write down the pros and cons and sleep on it for one night.', l: "You can't know the outcome in advance. A thoughtful choice is enough." },
+    { k: 'health', t: 'Not sleeping enough lately', s: "Set a 'phone down' time tonight, even if it's only 20 minutes earlier.", l: "You can't force sleep. You can make the evening gentler." },
+    { k: 'health', t: 'A health check I keep postponing', s: 'Book the appointment today. Just the booking, nothing else.', l: "The result isn't yours to decide. Showing up is the part you can do." },
+    { k: 'health', t: 'Eating properly this week', s: 'Plan one simple meal and put it in your calendar.', l: "You don't need a perfect week. One decent meal at a time is enough." },
+    { k: 'money', t: "An expense I wasn't expecting", s: 'Write down the amount, decide which month it comes out of, and move on.', l: "It has happened. Money worries shrink once there's a plan." },
+    { k: 'money', t: "Whether I'm saving enough", s: 'Set up one small automatic transfer, even a tiny one.', l: "You can't predict the future. You can start one small habit." },
+    { k: 'home', t: 'A family function coming up', s: 'Decide what you can help with, and say no to the rest.', l: "Everyone's mood and opinions aren't yours to manage." },
+    { k: 'home', t: 'Chores piling up at home', s: 'Do one 10-minute chore tonight and stop.', l: "The pile will wait. It won't judge you." },
+    { k: 'home', t: 'Calling my parents more often', s: 'Set a weekly 10-minute call and put it in your calendar.', l: "You can't be everywhere. Small, steady contact counts." },
+    { k: 'plans', t: "A plan I'm not sure I want to attend", s: "Decide now: go for an hour, or send a kind 'not this time'.", l: "You can't please everyone. It's okay to protect your energy." },
+    { k: 'plans', t: 'Replying to a friend\'s message', s: "Send one line now: 'Saw this, will reply properly soon.'", l: 'A friend who cares will wait a day for a proper answer.' }
+  ];
+  const OWN_STEPS = ['Write down the first 5-minute action and do it today.', 'Ask one person for help or information.', "Put it in your calendar at a specific time, so it stops floating around in your head.", "Decide what 'good enough' looks like, and stop there."];
+  const OWN_LET = 'Let this one go for today. If it still matters tomorrow, it will still be there.';
+
+  let notes = [], selected = null, nextId = 0, ownCount = 0;
+
+  let seen = new Set();   // worries already shown during this visit
+  function pickSet() {
+    const by = {}; PRE.forEach(p => { (by[p.k] = by[p.k] || []).push(p); });
+    const keys = shuffle(Object.keys(by));
+    const fresh = keys.filter(k => by[k].some(p => !seen.has(p.t)));
+    const order = fresh.concat(keys.filter(k => fresh.indexOf(k) < 0));       // subjects with something new first
+    const chosen = order.slice(0, 8).map(k => { const unseen = by[k].filter(p => !seen.has(p.t)); const from = unseen.length ? unseen : by[k]; return from[Math.floor(Math.random() * from.length)]; });
+    chosen.forEach(p => seen.add(p.t));
+    if (seen.size >= PRE.length) seen = new Set(chosen.map(p => p.t));          // everything has been shown: start over
+    return chosen;
+  }
+  function deal() {
+    notes = pickSet().map((p, i) => ({ id: nextId++, text: p.t, s: p.s, l: p.l, k: p.k, where: 'pile', own: false, c: i % 5, r: ((i * 37) % 5) - 2 }));
+    ownCount = 0; selected = null; render(); say('New set of worries');
+  }
+  function say(t) { $('live').textContent = t; }
+
+  function noteEl(n) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'note c' + n.c + (selected === n.id ? ' sel' : ''); b.style.setProperty('--r', n.r + 'deg');
+    b.textContent = n.text; b.dataset.id = n.id; b.setAttribute('aria-pressed', selected === n.id ? 'true' : 'false');
+    attach(b, n); return b;
+  }
+  function render() {
+    const pile = $('pile'), sd = $('slotDo'), so = $('slotOut'); pile.innerHTML = ''; sd.innerHTML = ''; so.innerHTML = '';
+    notes.forEach(n => (n.where === 'pile' ? pile : n.where === 'do' ? sd : so).appendChild(noteEl(n)));
+    const left = notes.filter(n => n.where === 'pile').length;
+    $('left').textContent = left ? left + ' to sort' : 'All sorted';
+    $('see').disabled = left !== 0 || notes.length === 0;
+    document.querySelectorAll('.place').forEach(p => { p.disabled = selected === null; });
+    $('hint').textContent = selected !== null ? 'Now tap a box' : 'No right or wrong answers';
+  }
+  function place(id, where) {
+    const n = notes.find(x => x.id === id); if (!n) return;
+    n.where = where; selected = null; render();
+    say('Moved to ' + (where === 'do' ? 'I can do something about it' : 'Out of my hands'));
+  }
+  function select(id) { selected = selected === id ? null : id; render(); }
+
+  /* ---- drag (mouse and touch) or tap-then-tap (also works with a keyboard) ---- */
+  let suppressClick = false;
+  function attach(el, n) {
+    el.addEventListener('click', () => { if (suppressClick) { suppressClick = false; return; } select(n.id); });
+    el.addEventListener('pointerdown', e => {
+      if (e.button !== undefined && e.button > 0) return;
+      const sx = e.clientX, sy = e.clientY, box = el.getBoundingClientRect(); let ghost = null, overZone = null;
+      const zoneAt = (x, y) => { const t = document.elementFromPoint ? document.elementFromPoint(x, y) : null; return t && t.closest ? t.closest('.zone') : null; };
+      const move = ev => {
+        const dx = ev.clientX - sx, dy = ev.clientY - sy;
+        if (!ghost && Math.hypot(dx, dy) > 8) {
+          ghost = el.cloneNode(true); ghost.className = el.className.replace('sel', '') + ' ghost-note'; ghost.style.width = box.width + 'px'; ghost.style.left = box.left + 'px'; ghost.style.top = box.top + 'px';
+          document.body.appendChild(ghost); el.classList.add('lifted');
+        }
+        if (ghost) {
+          ghost.style.left = (box.left + dx) + 'px'; ghost.style.top = (box.top + dy) + 'px';
+          const z = zoneAt(ev.clientX, ev.clientY); if (z !== overZone) { if (overZone) overZone.classList.remove('over'); overZone = z; if (z) z.classList.add('over'); }
+        }
+      };
+      const up = ev => {
+        document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up);
+        if (overZone) overZone.classList.remove('over');
+        if (ghost) { const z = zoneAt(ev.clientX, ev.clientY); ghost.remove(); suppressClick = true; setTimeout(() => { suppressClick = false; }, 0); if (z) place(n.id, z.dataset.zone); else el.classList.remove('lifted'); }
+      };
+      document.addEventListener('pointermove', move); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
+    });
+  }
+  document.querySelectorAll('.zone').forEach(z => z.addEventListener('click', e => { if (selected !== null && !e.target.closest('.note')) place(selected, z.dataset.zone); }));
+  document.querySelectorAll('.place').forEach(p => p.addEventListener('click', e => { e.stopPropagation(); if (selected !== null) place(selected, p.dataset.zone); }));
+
+  /* ---- add your own ---- */
+  function addOwn() {
+    const inp = $('own'), v = inp.value.trim().slice(0, 60);
+    if (!v) return;
+    if (ownCount >= 3) { $('hint').textContent = 'Three of your own is plenty'; return; }
+    notes.push({ id: nextId++, text: v, s: OWN_STEPS[ownCount % OWN_STEPS.length], l: OWN_LET, where: 'pile', own: true, c: (notes.length + 2) % 5, r: ((notes.length * 37) % 5) - 2 });
+    ownCount++; inp.value = ''; render(); say('Added to the pile');
+  }
+  $('addBtn').addEventListener('click', addOwn);
+  $('own').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addOwn(); } });
+
+  /* ---- result ---- */
+  function result() {
+    const mine = notes.filter(n => n.where === 'do'), out = notes.filter(n => n.where === 'out');
+    $('nDo').textContent = mine.length; $('nOut').textContent = out.length;
+    $('headline').textContent = out.length > mine.length ? 'A lot of this is not yours to carry.' : mine.length > out.length ? 'Most of this is workable.' : 'A fair split.';
+    $('msg').textContent = out.length > mine.length ? 'More of it is out of your hands than in them. That is worth knowing: you are allowed to put some of it down.'
+      : mine.length > out.length ? 'One small step on each is plenty. You do not need to solve it all today.' : 'Do the small steps, and let the rest float away.';
+    const fill = (id, list, kind) => {
+      const box = $(id); box.innerHTML = '';
+      list.forEach(n => { const d = document.createElement('div'); d.className = 'item ' + (kind === 'do' ? 'a' : 'b'); const b = document.createElement('b'); b.textContent = n.text; const s = document.createElement('span'); s.textContent = kind === 'do' ? 'Tiny step: ' + n.s : n.l; d.appendChild(b); d.appendChild(s); box.appendChild(d); });
+    };
+    fill('listDo', mine, 'do'); fill('listOut', out, 'out');
+    $('secDo').hidden = mine.length === 0; $('secOut').hidden = out.length === 0;
+    $('copy').textContent = 'Copy my list';
+    $('sort').hidden = true; $('res').hidden = false; window.scrollTo(0, 0);
+    floatAway(out.length);
+  }
+  function floatAway(count) {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const colors = ['#8EC8F5', '#FFD3DE', '#FFF1A8', '#D8F2C5', '#FFDDBA'];
+    for (let k = 0; k < Math.min(count, 8); k++) {
+      const b = document.createElement('div'); b.className = 'balloon'; b.style.left = (8 + Math.random() * 84) + '%'; b.style.background = colors[k % colors.length]; b.style.animationDelay = (k * 0.25) + 's';
+      document.body.appendChild(b); setTimeout(() => b.remove(), 4800 + k * 250);
+    }
+  }
+  function shareText() {
+    const mine = notes.filter(n => n.where === 'do'), out = notes.filter(n => n.where === 'out');
+    const line = list => { const std = list.filter(n => !n.own).map(n => n.text); const own = list.length - std.length; return std.join('; ') + (own ? (std.length ? '; ' : '') + own + ' of my own' : ''); };
+    return 'My worry sort\nIn my hands (' + mine.length + '): ' + (line(mine) || 'none') + '\nOut of my hands (' + out.length + '): ' + (line(out) || 'none') + '\n(From the AI & Data Chennai Cultural Club)';
+  }
+  async function copy() {
+    const text = shareText(); let ok = false;
+    try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); ok = true; } } catch (e) { ok = false; }
+    if (!ok) { try { const ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta); ta.select(); ok = document.execCommand('copy'); document.body.removeChild(ta); } catch (e) { ok = false; } }
+    $('copy').textContent = ok ? 'Copied!' : 'Copy not available';
+  }
+
+  $('see').addEventListener('click', result);
+  $('shuffle').addEventListener('click', deal);
+  $('again').addEventListener('click', () => { $('res').hidden = true; $('sort').hidden = false; deal(); window.scrollTo(0, 0); });
+  $('back').addEventListener('click', () => { $('res').hidden = true; $('sort').hidden = false; window.scrollTo(0, 0); });
+  $('copy').addEventListener('click', copy);
+  deal();
+})();
+</script>
+</body>
+</html>
